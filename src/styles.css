@@ -50,6 +50,7 @@ code {
 #app {
   min-height: 100vh;
   padding: 24px;
+  position: relative;
 }
 
 .shell {
@@ -204,6 +205,27 @@ canvas {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 12px;
+}
+
+.cursor-tooltip {
+  position: fixed;
+  z-index: 20;
+  min-width: 150px;
+  max-width: 220px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(24, 32, 44, 0.92);
+  color: #fffdfa;
+  box-shadow: 0 18px 32px rgba(18, 25, 36, 0.24);
+  pointer-events: none;
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.cursor-tooltip strong {
+  font-size: 0.92rem;
 }
 
 .sr-only {

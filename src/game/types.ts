@@ -46,6 +46,23 @@ export type SpawnQueueItem = {
   spawnAt: number;
 };
 
+export type HoveredEntity =
+  | {
+      kind: "enemy";
+      id: number;
+    }
+  | {
+      kind: "tower";
+      id: number;
+    };
+
+export type PointerPosition = {
+  clientX: number;
+  clientY: number;
+  canvasX: number;
+  canvasY: number;
+};
+
 export type GameState = {
   phase: GamePhase;
   gold: number;
@@ -53,6 +70,8 @@ export type GameState = {
   waveIndex: number;
   selectedTowerType: TowerType;
   hoveredCell: { col: number; row: number } | null;
+  hoveredEntity: HoveredEntity | null;
+  pointerPosition: PointerPosition | null;
   selectedTowerId: number | null;
   enemies: Enemy[];
   towers: Tower[];

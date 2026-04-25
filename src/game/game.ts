@@ -46,6 +46,8 @@ export class TowerDefenseGame {
       waveIndex: 0,
       selectedTowerType: "basic",
       hoveredCell: null,
+      hoveredEntity: null,
+      pointerPosition: null,
       selectedTowerId: null,
       enemies: [],
       towers: [],
@@ -77,6 +79,8 @@ export class TowerDefenseGame {
     this.state.waveIndex = nextState.waveIndex;
     this.state.selectedTowerType = nextState.selectedTowerType;
     this.state.hoveredCell = nextState.hoveredCell;
+    this.state.hoveredEntity = nextState.hoveredEntity;
+    this.state.pointerPosition = nextState.pointerPosition;
     this.state.selectedTowerId = nextState.selectedTowerId;
     this.state.enemies = nextState.enemies;
     this.state.towers = nextState.towers;
@@ -158,6 +162,7 @@ export class TowerDefenseGame {
 
     const delta = Math.min((timestamp - this.lastTime) / 1000, 0.033);
     this.lastTime = timestamp;
+    this.updateHoveredEntity();
 
     if (this.state.phase === "running") {
       this.update(delta);
@@ -173,11 +178,20 @@ export class TowerDefenseGame {
       const col = Math.floor(position.x / TILE_SIZE);
       const row = Math.floor(position.y / TILE_SIZE);
       this.state.hoveredCell = col >= 0 && col < GRID_COLS && row >= 0 && row < GRID_ROWS ? { col, row } : null;
+      this.state.pointerPosition = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+        canvasX: position.x,
+        canvasY: position.y
+      };
+      this.updateHoveredEntity();
       this.onChange();
     });
 
     this.canvas.addEventListener("mouseleave", () => {
       this.state.hoveredCell = null;
+      this.state.hoveredEntity = null;
+      this.state.pointerPosition = null;
       this.onChange();
     });
 
@@ -212,6 +226,7 @@ export class TowerDefenseGame {
     this.updateFlashes(delta);
     this.cleanupEntities();
     this.checkWaveEnd();
+    this.onChange();
   }
 
   private spawnEnemies() {
@@ -346,6 +361,7 @@ export class TowerDefenseGame {
     }
 
     if (this.state.queue.length === 0 && this.state.enemies.length === 0) {
+      this.state.shotFlashes = [];
       this.state.phase = this.state.waveIndex >= waves.length ? "won" : "idle";
       this.onChange();
     }
@@ -424,6 +440,33 @@ export class TowerDefenseGame {
     return this.state.towers.find((tower) => Math.hypot(tower.x - x, tower.y - y) <= TILE_SIZE * 0.35) ?? null;
   }
 
+  private findEnemyAt(x: number, y: number) {
+    for (let index = this.state.enemies.length - 1; index >= 0; index -= 1) {
+      const enemy = this.state.enemies[index];
+      if (Math.hypot(enemy.x - x, enemy.y - y) <= enemy.radius + 4) {
+        return enemy;
+      }
+    }
+
+    return null;
+  }
+
+  private updateHoveredEntity() {
+    const pointer = this.state.pointerPosition;
+    if (!pointer) {
+      this.state.hoveredEntity = null;
+      return;
+    }
+
+    const hoveredEnemy = this.findEnemyAt(pointer.canvasX, pointer.canvasY);
+    const hoveredTower = hoveredEnemy ? null : this.findTowerAt(pointer.canvasX, pointer.canvasY);
+    this.state.hoveredEntity = hoveredEnemy
+      ? { kind: "enemy", id: hoveredEnemy.id }
+      : hoveredTower
+        ? { kind: "tower", id: hoveredTower.id }
+        : null;
+  }
+
   private getSelectedTower() {
     return this.state.towers.find((tower) => tower.id === this.state.selectedTowerId) ?? null;
   }
@@ -489,13 +532,26 @@ export class TowerDefenseGame {
     }
 
     const { col, row } = this.state.hoveredCell;
+    const { x, y } = gridToWorldCenter(col, row);
+    const previewStats = getTowerStats(this.state.selectedTowerType, 1);
     const canBuild =
       isBuildableTile(col, row) &&
       !this.state.towers.some((tower) => tower.col === col && tower.row === row) &&
       this.state.gold >= towerDefinitions[this.state.selectedTowerType].cost;
 
+    this.ctx.strokeStyle = canBuild ? "rgba(39, 93, 140, 0.28)" : "rgba(158, 46, 63, 0.24)";
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, previewStats.range * TILE_SIZE, 0, Math.PI * 2);
+    this.ctx.stroke();
+
     this.ctx.fillStyle = canBuild ? "rgba(29, 122, 85, 0.2)" : "rgba(158, 46, 63, 0.18)";
     this.ctx.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+    this.ctx.fillStyle = canBuild ? "rgba(39, 93, 140, 0.2)" : "rgba(158, 46, 63, 0.2)";
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, TILE_SIZE * 0.24, 0, Math.PI * 2);
+    this.ctx.fill();
   }
 
   private renderTowers() {

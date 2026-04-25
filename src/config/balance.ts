@@ -39,10 +39,12 @@ export const GRID_ROWS = 24;
 export const TILE_SIZE = 32;
 export const CANVAS_WIDTH = GRID_COLS * TILE_SIZE;
 export const CANVAS_HEIGHT = GRID_ROWS * TILE_SIZE;
+
 export const MAX_TOWER_LEVEL = 5;
 export const SELL_REFUND_RATIO = 0.7;
 export const STARTING_GOLD = 180;
 export const STARTING_LIVES = 20;
+
 export const ENEMY_HP_GROWTH = 0.06;
 export const ENEMY_SPEED_GROWTH = 0.008;
 export const ENEMY_REWARD_GROWTH = 0.05;
