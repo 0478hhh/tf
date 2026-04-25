@@ -18,6 +18,7 @@ export function bootstrapApp(root: HTMLDivElement) {
         <div class="actions">
           <button data-action="start">开始下一波</button>
           <button data-action="pause">暂停</button>
+          <button data-action="restart">重新开始</button>
         </div>
         <div class="tower-grid" data-role="tower-grid"></div>
         <div class="panel tower-detail" data-role="selected-info">
@@ -32,6 +33,7 @@ export function bootstrapApp(root: HTMLDivElement) {
   const info = root.querySelector<HTMLDivElement>('[data-role="selected-info"]')!;
   const startButton = root.querySelector<HTMLButtonElement>('[data-action="start"]')!;
   const pauseButton = root.querySelector<HTMLButtonElement>('[data-action="pause"]')!;
+  const restartButton = root.querySelector<HTMLButtonElement>('[data-action="restart"]')!;
 
   const game = new TowerDefenseGame(canvas, renderHud);
 
@@ -72,6 +74,11 @@ export function bootstrapApp(root: HTMLDivElement) {
     renderHud();
   });
 
+  restartButton.addEventListener("click", () => {
+    game.reset();
+    renderHud();
+  });
+
   function renderHud() {
     const { state } = game;
 
@@ -83,6 +90,7 @@ export function bootstrapApp(root: HTMLDivElement) {
     startButton.disabled = state.phase === "running" || state.phase === "paused" || state.phase === "won" || state.phase === "lost";
     pauseButton.disabled = state.phase !== "running" && state.phase !== "paused";
     pauseButton.textContent = state.phase === "paused" ? "继续" : "暂停";
+    restartButton.disabled = false;
 
     for (const button of towerButtons) {
       button.classList.toggle("active", button.dataset.type === state.selectedTowerType);

@@ -35,7 +35,11 @@ export class TowerDefenseGame {
 
     this.ctx = ctx;
     this.onChange = onChange;
-    this.state = {
+    this.state = this.createInitialState();
+  }
+
+  private createInitialState(): GameState {
+    return {
       phase: "idle",
       gold: STARTING_GOLD,
       lives: STARTING_LIVES,
@@ -63,6 +67,28 @@ export class TowerDefenseGame {
 
   destroy() {
     cancelAnimationFrame(this.animationFrameId);
+  }
+
+  reset() {
+    const nextState = this.createInitialState();
+    this.state.phase = nextState.phase;
+    this.state.gold = nextState.gold;
+    this.state.lives = nextState.lives;
+    this.state.waveIndex = nextState.waveIndex;
+    this.state.selectedTowerType = nextState.selectedTowerType;
+    this.state.hoveredCell = nextState.hoveredCell;
+    this.state.selectedTowerId = nextState.selectedTowerId;
+    this.state.enemies = nextState.enemies;
+    this.state.towers = nextState.towers;
+    this.state.shotFlashes = nextState.shotFlashes;
+    this.state.nextEnemyId = nextState.nextEnemyId;
+    this.state.nextTowerId = nextState.nextTowerId;
+    this.state.nextFlashId = nextState.nextFlashId;
+    this.state.time = nextState.time;
+    this.state.queue = nextState.queue;
+    this.lastTime = 0;
+    this.render();
+    this.onChange();
   }
 
   setSelectedTowerType(type: TowerType) {
@@ -478,8 +504,11 @@ export class TowerDefenseGame {
     for (const tower of this.state.towers) {
       const definition = towerDefinitions[tower.type];
       const isSelected = this.state.selectedTowerId === tower.id;
+      const stats = getTowerStats(tower.type, tower.level);
+      const coreRadius = TILE_SIZE * 0.16;
+      const baseRadius = TILE_SIZE * (tower.type === "cannon" ? 0.33 : tower.type === "splash" ? 0.3 : 0.28);
+
       if (isSelected) {
-        const stats = getTowerStats(tower.type, tower.level);
         ctx.strokeStyle = "rgba(39, 93, 140, 0.28)";
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -487,19 +516,56 @@ export class TowerDefenseGame {
         ctx.stroke();
       }
 
+      ctx.fillStyle = "#efe7d9";
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, baseRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(18, 25, 36, 0.18)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      this.renderTowerLevelMarks(tower, baseRadius + 3);
+
+      switch (tower.type) {
+        case "basic":
+          this.drawBarrel(tower.x, tower.y, tower.aimAngle, TILE_SIZE * 0.26, 5, definition.color);
+          break;
+        case "rapid":
+          this.drawBarrel(tower.x, tower.y, tower.aimAngle - 0.08, TILE_SIZE * 0.24, 3, definition.color);
+          this.drawBarrel(tower.x, tower.y, tower.aimAngle + 0.08, TILE_SIZE * 0.24, 3, definition.color);
+          ctx.strokeStyle = definition.color;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(tower.x, tower.y, baseRadius - 3, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+        case "sniper":
+          this.drawBarrel(tower.x, tower.y, tower.aimAngle, TILE_SIZE * 0.36, 3, definition.color);
+          this.drawSightBlock(tower.x, tower.y, tower.aimAngle, 7, 5);
+          break;
+        case "splash":
+          this.drawBarrel(tower.x, tower.y, tower.aimAngle, TILE_SIZE * 0.22, 7, definition.color);
+          this.drawAmmoDots(tower.x, tower.y, baseRadius - 5, 3, definition.color);
+          ctx.strokeStyle = definition.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(tower.x, tower.y, coreRadius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+          break;
+        case "cannon":
+          this.drawBarrel(tower.x, tower.y, tower.aimAngle, TILE_SIZE * 0.18, 9, definition.color);
+          this.drawSupportFeet(tower.x, tower.y, 9, 5);
+          break;
+      }
+
       ctx.fillStyle = definition.color;
       ctx.beginPath();
-      ctx.arc(tower.x, tower.y, TILE_SIZE * 0.24, 0, Math.PI * 2);
+      ctx.arc(tower.x, tower.y, coreRadius, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = "#121924";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(tower.x, tower.y);
-      ctx.lineTo(
-        tower.x + Math.cos(tower.aimAngle) * TILE_SIZE * 0.3,
-        tower.y + Math.sin(tower.aimAngle) * TILE_SIZE * 0.3
-      );
+      ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.fillStyle = "#fffdfa";
@@ -513,10 +579,49 @@ export class TowerDefenseGame {
     const { ctx } = this;
 
     for (const enemy of this.state.enemies) {
-      ctx.fillStyle = enemyDefinitions[enemy.type].color;
+      const definition = enemyDefinitions[enemy.type];
+
+      if (enemy.type === "fast") {
+        const travelAngle = this.getEnemyTravelAngle(enemy);
+        for (let index = 3; index >= 1; index -= 1) {
+          const alpha = 0.08 * index;
+          const trailDistance = index * 5;
+          ctx.fillStyle = `rgba(77, 156, 67, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(
+            enemy.x - Math.cos(travelAngle) * trailDistance,
+            enemy.y - Math.sin(travelAngle) * trailDistance,
+            Math.max(enemy.radius - index, 2),
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+      }
+
+      ctx.fillStyle = definition.color;
       ctx.beginPath();
       ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
       ctx.fill();
+
+      if (enemy.type === "tank") {
+        ctx.strokeStyle = "#4f2b1d";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius + 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255, 250, 242, 0.35)";
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = "rgba(18, 25, 36, 0.4)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
       ctx.fillStyle = "rgba(18, 25, 36, 0.18)";
       ctx.fillRect(enemy.x - 14, enemy.y - enemy.radius - 9, 28, 4);
@@ -554,5 +659,68 @@ export class TowerDefenseGame {
     ctx.textAlign = "center";
     ctx.font = "bold 40px sans-serif";
     ctx.fillText(this.state.phase === "won" ? "胜利" : "失败", this.canvas.width / 2, this.canvas.height / 2);
+  }
+
+  private renderTowerLevelMarks(tower: Tower, radius: number) {
+    const { ctx } = this;
+    if (tower.level <= 1) {
+      return;
+    }
+
+    ctx.strokeStyle = "rgba(18, 25, 36, 0.6)";
+    ctx.lineWidth = 2;
+
+    for (let index = 0; index < tower.level - 1; index += 1) {
+      const start = -Math.PI / 2 + index * 0.75;
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, radius, start, start + 0.36);
+      ctx.stroke();
+    }
+  }
+
+  private drawBarrel(x: number, y: number, angle: number, length: number, width: number, color: string) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    ctx.fillRect(-width / 2, -width / 2, length, width);
+    ctx.strokeStyle = "#121924";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-width / 2, -width / 2, length, width);
+    ctx.restore();
+  }
+
+  private drawSightBlock(x: number, y: number, angle: number, offset: number, size: number) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = "#121924";
+    ctx.fillRect(-size / 2, -offset, size, size);
+    ctx.restore();
+  }
+
+  private drawAmmoDots(x: number, y: number, radius: number, count: number, color: string) {
+    const { ctx } = this;
+    for (let index = 0; index < count; index += 1) {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * index) / count;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawSupportFeet(x: number, y: number, width: number, height: number) {
+    const { ctx } = this;
+    ctx.fillStyle = "#121924";
+    ctx.fillRect(x - 11, y + 7, width, height);
+    ctx.fillRect(x + 2, y + 7, width, height);
+  }
+
+  private getEnemyTravelAngle(enemy: Enemy) {
+    const nextPoint = pathPoints[Math.min(enemy.pathIndex + 1, pathPoints.length - 1)];
+    return Math.atan2(nextPoint.y - enemy.y, nextPoint.x - enemy.x);
   }
 }

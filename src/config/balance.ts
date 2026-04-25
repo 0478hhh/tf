@@ -35,7 +35,7 @@ export type WaveEntry = {
 };
 
 export const GRID_COLS = 32;
-export const GRID_ROWS = 18;
+export const GRID_ROWS = 24;
 export const TILE_SIZE = 32;
 export const CANVAS_WIDTH = GRID_COLS * TILE_SIZE;
 export const CANVAS_HEIGHT = GRID_ROWS * TILE_SIZE;
@@ -43,15 +43,15 @@ export const MAX_TOWER_LEVEL = 5;
 export const SELL_REFUND_RATIO = 0.7;
 export const STARTING_GOLD = 180;
 export const STARTING_LIVES = 20;
-export const ENEMY_HP_GROWTH = 0.08;
-export const ENEMY_SPEED_GROWTH = 0.012;
+export const ENEMY_HP_GROWTH = 0.06;
+export const ENEMY_SPEED_GROWTH = 0.008;
 export const ENEMY_REWARD_GROWTH = 0.05;
 
 export const towerDefinitions: Record<TowerType, TowerDefinition> = {
   basic: {
     type: "basic",
     label: "均衡塔",
-    color: "#275d8c",
+    color: "#2f5d8a",
     cost: 60,
     baseDamage: 18,
     baseFireRate: 1.0,
@@ -64,7 +64,7 @@ export const towerDefinitions: Record<TowerType, TowerDefinition> = {
   rapid: {
     type: "rapid",
     label: "速射塔",
-    color: "#1d7a55",
+    color: "#2e8b57",
     cost: 75,
     baseDamage: 9,
     baseFireRate: 2.4,
@@ -77,7 +77,7 @@ export const towerDefinitions: Record<TowerType, TowerDefinition> = {
   sniper: {
     type: "sniper",
     label: "狙击塔",
-    color: "#6d4c9f",
+    color: "#6a4fb3",
     cost: 110,
     baseDamage: 55,
     baseFireRate: 0.45,
@@ -90,7 +90,7 @@ export const towerDefinitions: Record<TowerType, TowerDefinition> = {
   splash: {
     type: "splash",
     label: "爆破塔",
-    color: "#b75a24",
+    color: "#c06a2b",
     cost: 130,
     baseDamage: 24,
     baseFireRate: 0.8,
@@ -105,7 +105,7 @@ export const towerDefinitions: Record<TowerType, TowerDefinition> = {
   cannon: {
     type: "cannon",
     label: "重炮塔",
-    color: "#9e2e3f",
+    color: "#a13a4a",
     cost: 160,
     baseDamage: 85,
     baseFireRate: 0.32,
@@ -121,17 +121,17 @@ export const enemyDefinitions: Record<EnemyType, EnemyDefinition> = {
   normal: {
     type: "normal",
     label: "常规怪",
-    color: "#202b3b",
+    color: "#243040",
     radius: 7,
-    baseHp: 70,
-    baseSpeed: 95,
+    baseHp: 52,
+    baseSpeed: 72,
     baseReward: 10,
     baseLeakDamage: 1
   },
   fast: {
     type: "fast",
     label: "快怪",
-    color: "#3f7b2d",
+    color: "#4d9c43",
     radius: 5,
     baseHp: 38,
     baseSpeed: 155,
@@ -141,7 +141,7 @@ export const enemyDefinitions: Record<EnemyType, EnemyDefinition> = {
   tank: {
     type: "tank",
     label: "肉盾怪",
-    color: "#7d3c1f",
+    color: "#7a4330",
     radius: 9,
     baseHp: 210,
     baseSpeed: 58,
@@ -151,11 +151,11 @@ export const enemyDefinitions: Record<EnemyType, EnemyDefinition> = {
 };
 
 export const waves: WaveEntry[][] = [
-  [{ type: "normal", count: 6, interval: 0.9 }],
-  [{ type: "normal", count: 8, interval: 0.88 }],
-  [{ type: "normal", count: 10, interval: 0.86 }],
-  [{ type: "normal", count: 12, interval: 0.84 }],
-  [{ type: "normal", count: 14, interval: 0.82 }],
+  [{ type: "normal", count: 5, interval: 1.15 }],
+  [{ type: "normal", count: 7, interval: 1.05 }],
+  [{ type: "normal", count: 9, interval: 0.98 }],
+  [{ type: "normal", count: 11, interval: 0.92 }],
+  [{ type: "normal", count: 13, interval: 0.88 }],
   [
     { type: "normal", count: 12, interval: 0.88 },
     { type: "fast", count: 4, interval: 0.55 }
